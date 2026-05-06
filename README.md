@@ -28,8 +28,8 @@ de auditorías de las mismas
 
 ## 📁 Estructura del proyecto
 
-\`\`\`
-AvivaApointmentSystem/
+```
+AvivaAppointmentSystem/
 ├── appointmentsystem/
 │   ├── src/
 │   │   ├── main/
@@ -50,9 +50,9 @@ AvivaApointmentSystem/
 │   │   └── test/
 │   ├── .gitignore
 │   ├── mvnw
-│   ├── pom.xml
+│   └── pom.xml
 └── README.md
-\`\`\`
+```
 
 
 ---
