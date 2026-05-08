@@ -487,15 +487,17 @@ function filtrarPorEspecialidad(valor) {
 }
 
 if (window.location.pathname.includes("/admin/")) {
-    let logeado = localStorage.getItem("login");
-    if (logeado !== "true") {
-        window.location.href = "../login/login.html";
+    let token = localStorage.getItem("token");
+    if (!token) {
+        window.location.href = "/views/login/login.html";
     }
 }
 
 function logout() {
-    localStorage.removeItem("login");
-    window.location.href = "../login/login.html";
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("username");
+    window.location.href = "/views/login/login.html";
 }
 
 const buscarPago = document.getElementById("buscarPago");
