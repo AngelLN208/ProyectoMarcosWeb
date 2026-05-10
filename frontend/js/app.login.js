@@ -90,7 +90,7 @@ function redirigir(role) {
         window.location.href = "/frontend/views/admin/dashboard.html";
 
     else if (role === "RECEPTIONIST")
-        window.location.href = "/frontend/views/recep/recep.html";
+        window.location.href = "/frontend/views/recep/index.html";
 
     else if (role === "DOCTOR")
         window.location.href = "/frontend/views/doctor/doctor.html";
