@@ -551,7 +551,9 @@ async function registrarPaciente(e) {
     const dni         = document.getElementById('p_dni')?.value.trim();
     const dateOfBirth = document.getElementById('p_fecha_nac')?.value;
     const gender      = document.getElementById('p_genero')?.value;
-    const phone       = document.getElementById('p_telefono')?.value.trim();
+    const codigoPais = document.getElementById('p_codigo_pais')?.value.trim();
+    const numTel     = document.getElementById('p_telefono')?.value.trim();
+    const phone      = (codigoPais && numTel) ? `${codigoPais}${numTel}` : '';
     const email       = document.getElementById('p_email')?.value.trim();
     const address     = document.getElementById('p_direccion')?.value.trim();
 
