@@ -235,9 +235,10 @@ function renderTablaCitas(citas, tbody) {
 
         const btnRepro = !cancelada
             ? `<button class="btn btn-sm btn-light text-warning rounded-circle me-1"
-                       title="Reprogramar" onclick="abrirReprogramar(${c.id}, '${paciente}')">
-                   <i class="fa-solid fa-clock"></i>
-               </button>` : '';
+                        title="Reprogramar"
+                        onclick="abrirReprogramar(${c.id}, '${paciente}', ${c.doctor?.specialty?.id}, ${c.doctor?.id})">
+                    <i class="fa-solid fa-clock"></i>
+                </button>` : '';
         const btnCancel = !cancelada
             ? `<button class="btn btn-sm btn-light text-danger rounded-circle"
                        title="Cancelar" onclick="abrirCancelar(${c.id}, '${paciente}')">
@@ -456,23 +457,104 @@ async function confirmarCancelar() {
 // ── Reprogramar cita ──
 let _citaAReprogramar = null;
 
-function abrirReprogramar(id, nombre) {
+async function abrirReprogramar(id, nombre, especialidadId, doctorId) {
     _citaAReprogramar = id;
     document.getElementById('repro_nombre_paciente').textContent = nombre;
+    document.getElementById('repro_cita_id').value = id;
+    document.getElementById('repro_doctor_actual_id').value = doctorId;
+
+    // Reset
+    document.getElementById('repro_fecha').disabled = true;
     document.getElementById('repro_fecha').value = '';
-    document.getElementById('repro_hora').value  = '';
+    document.getElementById('repro_horario').disabled = true;
+    document.getElementById('repro_horario').innerHTML = `<option value="" disabled selected>Primero selecciona médico y fecha...</option>`;
+    document.getElementById('repro_medico').disabled = true;
+
+    // Cargar especialidades y preseleccionar la actual
+    await cargarEspecialidadesRepro(especialidadId);
+
     new bootstrap.Modal(document.getElementById('modalReprogramar')).show();
+}
+
+async function cargarEspecialidadesRepro(especialidadIdActual) {
+    const sel = document.getElementById('repro_especialidad');
+    try {
+        const especialidades = await apiFetch(`${BASE}/specialties`);
+        sel.innerHTML = `<option value="" disabled>Seleccionar especialidad...</option>` +
+            especialidades.map(e =>
+                `<option value="${e.id}" ${e.id == especialidadIdActual ? 'selected' : ''}>${e.name}</option>`
+            ).join('');
+        // Cargar médicos de la especialidad actual
+        await cargarMedicosRepro(especialidadIdActual);
+    } catch { sel.innerHTML = `<option>Error cargando especialidades</option>`; }
+}
+
+async function cargarMedicosRepro(specialtyId) {
+    const sel      = document.getElementById('repro_medico');
+    const fechaInp = document.getElementById('repro_fecha');
+    const slotSel  = document.getElementById('repro_horario');
+    sel.disabled = true;
+    sel.innerHTML = `<option>Cargando...</option>`;
+    fechaInp.disabled = true;
+    fechaInp.value = '';
+    slotSel.disabled = true;
+    slotSel.innerHTML = `<option value="" disabled selected>Primero selecciona médico y fecha...</option>`;
+
+    try {
+        const medicos = await apiFetch(`${BASE}/doctors/by-specialty/${specialtyId}`);
+        if (!medicos.length) {
+            sel.innerHTML = `<option disabled selected>No hay médicos disponibles</option>`;
+            return;
+        }
+        const doctorActual = document.getElementById('repro_doctor_actual_id').value;
+        sel.innerHTML = `<option value="" disabled selected>Seleccionar médico...</option>` +
+            medicos.map(m =>
+                `<option value="${m.id}" ${m.id == doctorActual ? 'selected' : ''}>${m.firstName} ${m.lastName}</option>`
+            ).join('');
+        sel.disabled = false;
+        // Si hay médico preseleccionado habilitar fecha
+        if (sel.value) fechaInp.disabled = false;
+    } catch {
+        sel.innerHTML = `<option>Error cargando médicos</option>`;
+    }
+}
+
+async function cargarSlotsRepro() {
+    const doctorId = document.getElementById('repro_medico')?.value;
+    const fecha    = document.getElementById('repro_fecha')?.value;
+    const slotSel  = document.getElementById('repro_horario');
+    if (!slotSel || !doctorId || !fecha) return;
+
+    slotSel.disabled = true;
+    slotSel.innerHTML = `<option>Cargando horarios...</option>`;
+
+    try {
+        const slots = await apiFetch(`${BASE}/appointments/doctor/${doctorId}/available-slots?date=${fecha}`);
+        if (!slots.length) {
+            slotSel.innerHTML = `<option disabled selected>No hay horarios disponibles</option>`;
+            return;
+        }
+        slotSel.innerHTML = `<option value="" disabled selected>Seleccionar horario...</option>` +
+            slots.map(s => `<option value="${s.startTime}">${s.startTime.substring(0,5)} — ${s.endTime.substring(0,5)}</option>`).join('');
+        slotSel.disabled = false;
+    } catch {
+        slotSel.innerHTML = `<option>Error cargando horarios</option>`;
+    }
 }
 
 async function confirmarReprogramar() {
     if (!_citaAReprogramar) return;
-    const fecha = document.getElementById('repro_fecha')?.value;
-    const hora  = document.getElementById('repro_hora')?.value;
-    if (!fecha || !hora) { mostrarError('Selecciona nueva fecha y hora.'); return; }
+    const doctorId = document.getElementById('repro_medico')?.value;
+    const fecha    = document.getElementById('repro_fecha')?.value;
+    const hora     = document.getElementById('repro_horario')?.value;
+
+    if (!doctorId) { mostrarError('Selecciona un médico.'); return; }
+    if (!fecha)    { mostrarError('Selecciona una fecha.'); return; }
+    if (!hora)     { mostrarError('Selecciona un horario.'); return; }
 
     try {
         await apiFetch(
-            `${BASE}/appointments/${_citaAReprogramar}/reschedule?newDateTime=${fecha}T${hora}:00`,
+            `${BASE}/appointments/${_citaAReprogramar}/reschedule?newDateTime=${fecha}T${hora}`,
             { method: 'PUT' }
         );
         bootstrap.Modal.getInstance(document.getElementById('modalReprogramar'))?.hide();
@@ -968,6 +1050,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('filtro-especialidad').value = '';
                 filtrarCitas();
             });
+        document.getElementById('repro_especialidad')
+            ?.addEventListener('change', function () { cargarMedicosRepro(this.value); });
+
+        document.getElementById('repro_medico')
+            ?.addEventListener('change', function () {
+                const fechaInp = document.getElementById('repro_fecha');
+                if (fechaInp) {
+                    fechaInp.disabled = false;
+                    fechaInp.min = new Date().toISOString().split('T')[0];
+                    fechaInp.value = '';
+                }
+            document.getElementById('repro_horario').disabled = true;
+    });
+
+document.getElementById('repro_fecha')
+    ?.addEventListener('change', cargarSlotsRepro);
     }
 
     // ── Pacientes ──

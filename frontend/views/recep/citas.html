@@ -209,21 +209,43 @@
       </div>
       <div class="modal-body px-4 pb-4">
         <input type="hidden" id="repro_cita_id"/>
+        <input type="hidden" id="repro_doctor_actual_id"/>
         <div class="alert alert-light border rounded-3 mb-3 py-2 px-3">
           <small class="text-muted">Reprogramando cita de:</small>
           <p class="fw-bold mb-0 text-dark" id="repro_nombre_paciente"></p>
         </div>
-        <div class="row g-3">
-          <div class="col-6">
-            <label class="form-label small fw-bold">Nueva Fecha</label>
-            <input type="date" class="form-control rounded-3" id="repro_fecha"/>
-          </div>
-          <div class="col-6">
-            <label class="form-label small fw-bold">Nueva Hora</label>
-            <input type="time" class="form-control rounded-3" id="repro_hora"/>
-          </div>
+
+        <!-- ESPECIALIDAD -->
+        <div class="mb-3">
+          <label class="form-label small fw-bold">Especialidad</label>
+          <select class="form-select rounded-3" id="repro_especialidad">
+            <option value="" disabled selected>Seleccionar especialidad...</option>
+          </select>
         </div>
-        <button class="btn btn-warning w-100 rounded-pill mt-3 text-white fw-bold" id="btn-confirmar-reprogramar">
+
+        <!-- MÉDICO -->
+        <div class="mb-3">
+          <label class="form-label small fw-bold">Médico</label>
+          <select class="form-select rounded-3" id="repro_medico" disabled>
+            <option value="" disabled selected>Primero selecciona especialidad...</option>
+          </select>
+        </div>
+
+        <!-- FECHA -->
+        <div class="mb-3">
+          <label class="form-label small fw-bold">Nueva Fecha</label>
+          <input type="date" class="form-control rounded-3" id="repro_fecha" disabled/>
+        </div>
+
+        <!-- SLOTS -->
+        <div class="mb-3">
+          <label class="form-label small fw-bold">Horario Disponible</label>
+          <select class="form-select rounded-3" id="repro_horario" disabled>
+            <option value="" disabled selected>Primero selecciona médico y fecha...</option>
+          </select>
+        </div>
+
+        <button class="btn btn-warning w-100 rounded-pill mt-2 text-white fw-bold" id="btn-confirmar-reprogramar">
           <i class="fa-solid fa-calendar-days me-2"></i> Confirmar Reprogramación
         </button>
       </div>
