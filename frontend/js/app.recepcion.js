@@ -621,10 +621,19 @@ async function cargarPagos() {
     if (!tbody) return;
 
     try {
-        const pagos = await apiFetch(`${BASE}/payments`);
-        _todosPagos = pagos;
-        renderTablaPagos(pagos, tbody);
-        actualizarStatsPagos(pagos);
+        const [pagos, citas] = await Promise.all([
+            apiFetch(`${BASE}/payments`),
+            apiFetch(`${BASE}/appointments`)
+        ]);
+
+        // Cruzar pagos con citas
+        _todosPagos = pagos.map(p => ({
+            ...p,
+            appointment: citas.find(c => c.id === p.appointmentId) || null
+        }));
+
+        renderTablaPagos(_todosPagos, tbody);
+        actualizarStatsPagos(_todosPagos);
     } catch (e) {
         tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">${e.message}</td></tr>`;
     }
