@@ -257,10 +257,8 @@ function renderSidebar() {
             <a href="#" class="list-group-item list-group-item-action nav-link-custom rounded-pill" data-panel="panel-pagos">
                 <i class="fa-solid fa-money-bill-wave me-3"></i> Pagos
             </a>
-            <a href="#" class="list-group-item list-group-item-action nav-link-custom position-relative rounded-pill" data-panel="panel-notificaciones">
+            <a class="list-group-item list-group-item-action nav-link-custom rounded-pill opacity-50 pe-none">
                 <i class="fa-solid fa-bell me-3"></i> Notificaciones
-                <span class="badge bg-danger rounded-pill ms-auto notif-badge" id="notif-count-sidebar"
-                      style="display:${noLeidas > 0 ? 'inline-flex' : 'none'}">${noLeidas}</span>
             </a>
         </div>
         <div class="px-3 pt-2 pb-3 mt-auto">
