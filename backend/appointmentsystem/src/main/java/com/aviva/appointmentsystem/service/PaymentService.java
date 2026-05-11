@@ -46,8 +46,96 @@ public class PaymentService {
     private NotificationService notificationService;
 
     /**
-     * Procesa un pago y genera el comprobante
-     * Cambia el estado del pago a PAGADO y la cita a CONFIRMADA
+     * Crear nuevo pago manualmente
+     */
+    public PaymentResponse createPayment(com.aviva.appointmentsystem.dto.PaymentRequest request) {
+        logger.info("Creando nuevo pago manualmente para cita ID={}", request.appointmentId());
+
+        Appointment appointment = appointmentRepository.findById(request.appointmentId())
+                .orElseThrow(() -> new ResourceNotFoundException("Cita", request.appointmentId()));
+
+        if (!paymentRepository.findByAppointmentId(request.appointmentId()).isEmpty()) {
+            throw new ValidationException("Ya existe un pago pre-registrado para la cita ID=" + request.appointmentId());
+        }
+
+        Payment payment = new Payment();
+        payment.setAppointment(appointment);
+        payment.setAmount(request.amount());
+
+        if (request.method() != null && !request.method().isBlank()) {
+            payment.setMethod(PaymentMethod.valueOf(request.method().toUpperCase()));
+        } else {
+            payment.setMethod(PaymentMethod.CASH);
+        }
+
+        if (request.status() != null && !request.status().isBlank()) {
+            String s = request.status().toUpperCase();
+            if (s.equals("COMPLETED")) s = "PAID";
+            payment.setStatus(PaymentStatus.valueOf(s));
+        } else {
+            payment.setStatus(PaymentStatus.PENDING);
+        }
+
+        if (request.reference() != null && !request.reference().isBlank()) {
+            payment.setDescription("Referencia: " + request.reference());
+        } else {
+            payment.setDescription(request.description());
+        }
+
+        payment.setCreatedAt(java.time.LocalDateTime.now());
+        payment.setUpdatedAt(java.time.LocalDateTime.now());
+
+        Payment saved = paymentRepository.save(payment);
+        return mapToResponse(saved);
+    }
+
+    /**
+     * Actualiza un pago manualmente
+     */
+    public PaymentResponse updatePayment(Long id, com.aviva.appointmentsystem.dto.PaymentUpdateRequest request) {
+        logger.info("Actualizando pago manual ID={}", id);
+        Payment payment = paymentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Pago", id));
+
+        if (request.status() != null && !request.status().isBlank()) {
+            String s = request.status().toUpperCase();
+            if (s.equals("COMPLETED")) s = "PAID";
+            payment.setStatus(PaymentStatus.valueOf(s));
+            if (payment.getStatus() == PaymentStatus.PAID && payment.getPaymentDate() == null) {
+                payment.setPaymentDate(java.time.LocalDateTime.now());
+            }
+        }
+
+        if (request.method() != null && !request.method().isBlank()) {
+            payment.setMethod(PaymentMethod.valueOf(request.method().toUpperCase()));
+        }
+
+        if (request.reference() != null && !request.reference().isBlank()) {
+            payment.setDescription("Referencia: " + request.reference());
+        }
+
+        if (request.description() != null && !request.description().isBlank()) {
+            payment.setDescription(request.description());
+        }
+
+        payment.setUpdatedAt(java.time.LocalDateTime.now());
+        Payment updated = paymentRepository.save(payment);
+        return mapToResponse(updated);
+    }
+
+    /**
+     * Elimina un pago
+     */
+    public void deletePayment(Long id) {
+        logger.info("Eliminando pago ID={}", id);
+        Payment payment = paymentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Pago", id));
+        paymentRepository.delete(payment);
+    }
+
+    /**
+     * Procesa un pago
+     * POST /api/payments/{appointmentId}/process?method=...
      */
     public PaymentResponse processPayment(Long appointmentId, PaymentMethod method) {
         logger.info("Procesando pago para cita ID={}", appointmentId);

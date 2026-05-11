@@ -82,6 +82,22 @@ public class AppointmentController {
     }
 
     /**
+     * Actualiza una cita existente
+     * PUT /api/appointments/{id}
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> update(
+            @PathVariable Long id,
+            @RequestBody com.aviva.appointmentsystem.dto.AppointmentUpdateRequest request) {
+        logger.info("PUT /api/appointments/{} - Actualizar cita", id);
+
+        AppointmentResponse response = appointmentService.update(id, request);
+
+        return ResponseEntity
+                .ok(ApiResponse.success(response, "Cita actualizada exitosamente"));
+    }
+
+    /**
      * Obtiene una cita por ID
      * GET /api/appointments/{id}
      */

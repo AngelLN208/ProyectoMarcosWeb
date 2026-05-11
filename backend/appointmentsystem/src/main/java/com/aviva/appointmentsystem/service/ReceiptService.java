@@ -2,8 +2,11 @@ package com.aviva.appointmentsystem.service;
 
 import com.aviva.appointmentsystem.dto.ReceiptResponse;
 import com.aviva.appointmentsystem.entity.Receipt;
+import com.aviva.appointmentsystem.entity.Payment;
 import com.aviva.appointmentsystem.exception.ResourceNotFoundException;
+import com.aviva.appointmentsystem.exception.ValidationException;
 import com.aviva.appointmentsystem.repository.ReceiptRepository;
+import com.aviva.appointmentsystem.repository.PaymentRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +26,44 @@ public class ReceiptService {
 
     @Autowired
     private ReceiptRepository receiptRepository;
+
+    @Autowired
+    private PaymentRepository paymentRepository;
+
+    /**
+     * Crear un comprobante
+     */
+    public ReceiptResponse createReceipt(com.aviva.appointmentsystem.dto.ReceiptRequest request) {
+        logger.info("Creando comprobante para pago ID={}", request.paymentId());
+
+        Payment payment = paymentRepository.findById(request.paymentId())
+                .orElseThrow(() -> new ResourceNotFoundException("Pago", request.paymentId()));
+
+        if (receiptRepository.findByReceiptNumber(request.receiptNumber()).isPresent()) {
+            throw new ValidationException("El número de comprobante ya existe");
+        }
+
+        Receipt receipt = new Receipt();
+        receipt.setPayment(payment);
+
+        if (request.receiptNumber() != null && !request.receiptNumber().isBlank()) {
+            receipt.setReceiptNumber(request.receiptNumber());
+        } else {
+            receipt.setReceiptNumber("REC-" + System.currentTimeMillis());
+        }
+
+        if (request.amount() != null) {
+            receipt.setTotalAmount(request.amount());
+        } else {
+            receipt.setTotalAmount(payment.getAmount());
+        }
+
+        receipt.setDescription(request.description() != null ? request.description() : "Comprobante de pago generado");
+        receipt.setCreatedAt(java.time.LocalDateTime.now());
+
+        Receipt saved = receiptRepository.save(receipt);
+        return mapToResponse(saved);
+    }
 
     /**
      * Obtiene un comprobante por ID

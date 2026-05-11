@@ -55,8 +55,13 @@ public class PatientService {
         patient.setDni(request.dni());
         patient.setFirstName(request.firstName());
         patient.setLastName(request.lastName());
-        patient.setGender(Gender.valueOf(request.gender().toUpperCase()));
-        patient.setDateOfBirth(parseDate(request.dateOfBirth()));
+        patient.setGender(parseGender(request.gender()));
+
+        String birthDateStr = request.dateOfBirth() != null ? request.dateOfBirth().toString() : null;
+        if (birthDateStr != null) {
+            patient.setDateOfBirth(parseDate(birthDateStr));
+        }
+
         patient.setPhone(request.phone());
         patient.setEmail(request.email());
         patient.setAddress(request.address());
@@ -80,25 +85,27 @@ public class PatientService {
                 .orElseThrow(() -> new ResourceNotFoundException("Paciente", id));
 
         // Validar DNI si cambió
-        if (!patient.getDni().equals(request.dni()) &&
+        if (request.dni() != null && !patient.getDni().equals(request.dni()) &&
             patientRepository.findByDni(request.dni()).isPresent()) {
             throw new ResourceAlreadyExistsException("Ya existe un paciente con DNI: " + request.dni());
         }
 
         // Validar email si cambió
-        if (!patient.getEmail().equals(request.email()) &&
+        if (request.email() != null && !patient.getEmail().equals(request.email()) &&
             patientRepository.findByEmail(request.email()).isPresent()) {
             throw new ResourceAlreadyExistsException("Ya existe un paciente con email: " + request.email());
         }
 
-        patient.setDni(request.dni());
-        patient.setFirstName(request.firstName());
-        patient.setLastName(request.lastName());
-        patient.setGender(Gender.valueOf(request.gender().toUpperCase()));
-        patient.setDateOfBirth(parseDate(request.dateOfBirth()));
-        patient.setPhone(request.phone());
-        patient.setEmail(request.email());
-        patient.setAddress(request.address());
+        if (request.dni() != null) patient.setDni(request.dni());
+        if (request.firstName() != null) patient.setFirstName(request.firstName());
+        if (request.lastName() != null) patient.setLastName(request.lastName());
+        if (request.gender() != null) patient.setGender(parseGender(request.gender()));
+        if (request.dateOfBirth() != null) {
+            patient.setDateOfBirth(request.dateOfBirth());
+        }
+        if (request.phone() != null) patient.setPhone(request.phone());
+        if (request.email() != null) patient.setEmail(request.email());
+        if (request.address() != null) patient.setAddress(request.address());
         patient.setUpdatedAt(LocalDateTime.now());
 
         Patient updated = patientRepository.save(patient);
@@ -218,5 +225,14 @@ public class PatientService {
             logger.error("Error parseando fecha: {}", dateStr);
             throw new ValidationException("Formato de fecha inválido. Use: yyyy-MM-dd");
         }
+    }
+
+    private Gender parseGender(String g) {
+        if (g == null) return Gender.OTHER;
+        return switch (g.toUpperCase()) {
+            case "M", "MASCULINO", "MALE" -> Gender.MALE;
+            case "F", "FEMENINO", "FEMALE" -> Gender.FEMALE;
+            default -> Gender.OTHER;
+        };
     }
 }

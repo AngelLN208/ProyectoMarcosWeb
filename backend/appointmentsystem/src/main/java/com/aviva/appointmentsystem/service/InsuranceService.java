@@ -43,10 +43,10 @@ public class InsuranceService {
         Insurance insurance = new Insurance();
         insurance.setName(request.name());
         insurance.setDescription(request.description());
-        insurance.setCoveragePercentage(request.coveragePercentage());
-        insurance.setDeductible(request.deductible());
-        insurance.setMaxCoveragePerConsultation(request.maxCoveragePerConsultation());
-        insurance.setMaxAnnualCoverage(request.maxAnnualCoverage());
+        insurance.setCoveragePercentage(request.coveragePercentage() != null ? request.coveragePercentage() : java.math.BigDecimal.ZERO);
+        insurance.setDeductible(request.deductible() != null ? request.deductible() : java.math.BigDecimal.ZERO);
+        insurance.setMaxCoveragePerConsultation(request.maxCoveragePerConsultation() != null ? request.maxCoveragePerConsultation() : java.math.BigDecimal.ZERO);
+        insurance.setMaxAnnualCoverage(request.maxAnnualCoverage() != null ? request.maxAnnualCoverage() : java.math.BigDecimal.ZERO);
         insurance.setUsedAnnualCoverage(java.math.BigDecimal.ZERO);
         insurance.setActive(true);
         insurance.setRequiresPreAuthorization(request.requiresPreAuthorization() != null && request.requiresPreAuthorization());
@@ -69,23 +69,24 @@ public class InsuranceService {
                 .orElseThrow(() -> new ResourceNotFoundException("Seguro", id));
 
         // Validar nombre único si cambió
-        if (!insurance.getName().equals(request.name())) {
+        if (request.name() != null && !insurance.getName().equals(request.name())) {
             insuranceRepository.findByName(request.name()).ifPresent(existing -> {
                 throw new ResourceAlreadyExistsException("Seguro con nombre: " + request.name());
             });
+            insurance.setName(request.name());
         }
 
-        insurance.setName(request.name());
-        insurance.setDescription(request.description());
-        insurance.setCoveragePercentage(request.coveragePercentage());
-        insurance.setDeductible(request.deductible());
-        insurance.setMaxCoveragePerConsultation(request.maxCoveragePerConsultation());
-        insurance.setMaxAnnualCoverage(request.maxAnnualCoverage());
-        insurance.setRequiresPreAuthorization(request.requiresPreAuthorization() != null && request.requiresPreAuthorization());
+        if (request.description() != null) insurance.setDescription(request.description());
+        if (request.coveragePercentage() != null) insurance.setCoveragePercentage(request.coveragePercentage());
+        if (request.deductible() != null) insurance.setDeductible(request.deductible());
+        if (request.maxCoveragePerConsultation() != null) insurance.setMaxCoveragePerConsultation(request.maxCoveragePerConsultation());
+        if (request.maxAnnualCoverage() != null) insurance.setMaxAnnualCoverage(request.maxAnnualCoverage());
+        if (request.requiresPreAuthorization() != null) insurance.setRequiresPreAuthorization(request.requiresPreAuthorization());
+
         insurance.setUpdatedAt(LocalDateTime.now());
 
         Insurance updated = insuranceRepository.save(insurance);
-        logger.info("Seguro actualizado: ID={}", id);
+        logger.info("Seguro actualizado exitosamente: ID={}", updated.getId());
 
         return mapToResponse(updated);
     }

@@ -114,16 +114,18 @@ public class MedicalScheduleService {
         MedicalSchedule schedule = medicalScheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Horario", scheduleId));
 
-        if (request.endTime().isBefore(request.startTime())) {
-            throw new ValidationException("La hora de fin debe ser posterior a la de inicio");
+        if (request.startTime() != null && request.endTime() != null) {
+            if (request.endTime().isBefore(request.startTime())) {
+                throw new ValidationException("La hora de fin debe ser posterior a la de inicio");
+            }
         }
 
-        schedule.setDayOfWeek(request.dayOfWeek());
-        schedule.setStartTime(request.startTime());
-        schedule.setEndTime(request.endTime());
-        schedule.setAppointmentDurationMinutes(request.appointmentDurationMinutes());
-        schedule.setMaxAppointmentsPerDay(request.maxAppointmentsPerDay());
-        schedule.setNotes(request.notes());
+        if (request.dayOfWeek() != null) schedule.setDayOfWeek(request.dayOfWeek());
+        if (request.startTime() != null) schedule.setStartTime(request.startTime());
+        if (request.endTime() != null) schedule.setEndTime(request.endTime());
+        if (request.appointmentDurationMinutes() != null) schedule.setAppointmentDurationMinutes(request.appointmentDurationMinutes());
+        if (request.maxAppointmentsPerDay() != null) schedule.setMaxAppointmentsPerDay(request.maxAppointmentsPerDay());
+        if (request.notes() != null) schedule.setNotes(request.notes());
         schedule.setUpdatedAt(LocalDateTime.now());
 
         MedicalSchedule updated = medicalScheduleRepository.save(schedule);

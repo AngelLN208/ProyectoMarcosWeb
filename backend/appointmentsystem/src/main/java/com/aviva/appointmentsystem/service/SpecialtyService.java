@@ -63,14 +63,18 @@ public class SpecialtyService {
         Specialty specialty = specialtyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Especialidad", id));
 
-        // Validar que no haya otra con el mismo nombre
-        if (!specialty.getName().equalsIgnoreCase(request.name()) &&
-            specialtyRepository.findByName(request.name()).isPresent()) {
-            throw new ResourceAlreadyExistsException("La especialidad '" + request.name() + "' ya existe");
+        // Validar que no haya otra con el mismo nombre si este se proporciona
+        if (request.name() != null && !specialty.getName().equalsIgnoreCase(request.name())) {
+            if (specialtyRepository.findByName(request.name()).isPresent()) {
+                throw new ResourceAlreadyExistsException("La especialidad '" + request.name() + "' ya existe");
+            }
+            specialty.setName(request.name());
         }
 
-        specialty.setName(request.name());
-        specialty.setDescription(request.description());
+        if (request.description() != null) {
+            specialty.setDescription(request.description());
+        }
+
         specialty.setUpdatedAt(LocalDateTime.now());
 
         Specialty updated = specialtyRepository.save(specialty);

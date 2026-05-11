@@ -77,21 +77,23 @@ public class DoctorService {
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor", id));
 
         // Validar licencia si cambió
-        if (!doctor.getLicenseNumber().equals(request.licenseNumber()) &&
+        if (request.licenseNumber() != null && !doctor.getLicenseNumber().equals(request.licenseNumber()) &&
             doctorRepository.findByLicenseNumber(request.licenseNumber()).isPresent()) {
             throw new ResourceAlreadyExistsException("Ya existe un doctor con número de licencia: " + request.licenseNumber());
         }
 
         // Validar especialidad
-        Specialty specialty = specialtyRepository.findById(request.specialtyId())
-                .orElseThrow(() -> new ResourceNotFoundException("Especialidad", request.specialtyId()));
+        if (request.specialtyId() != null) {
+            Specialty specialty = specialtyRepository.findById(request.specialtyId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Especialidad", request.specialtyId()));
+            doctor.setSpecialty(specialty);
+        }
 
-        doctor.setFirstName(request.firstName());
-        doctor.setLastName(request.lastName());
-        doctor.setLicenseNumber(request.licenseNumber());
-        doctor.setPhone(request.phone());
-        doctor.setEmail(request.email());
-        doctor.setSpecialty(specialty);
+        if (request.firstName() != null) doctor.setFirstName(request.firstName());
+        if (request.lastName() != null) doctor.setLastName(request.lastName());
+        if (request.licenseNumber() != null) doctor.setLicenseNumber(request.licenseNumber());
+        if (request.phone() != null) doctor.setPhone(request.phone());
+        if (request.email() != null) doctor.setEmail(request.email());
         doctor.setUpdatedAt(LocalDateTime.now());
 
         Doctor updated = doctorRepository.save(doctor);

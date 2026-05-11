@@ -179,6 +179,32 @@ public class AppointmentService {
     }
 
     /**
+     * Actualizar estado u otros campos de la cita
+     */
+    public AppointmentResponse update(Long id, com.aviva.appointmentsystem.dto.AppointmentUpdateRequest request) {
+        logger.info("Actualizando cita ID={}", id);
+
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cita", id));
+
+        if (request.status() != null && !request.status().isBlank()) {
+            appointment.setStatus(AppointmentStatus.valueOf(request.status().toUpperCase()));
+        }
+
+        if (request.notes() != null && !request.notes().isBlank()) {
+            appointment.setReason(request.notes()); // Mapear notas a reason si es necesario
+        }
+
+        appointment.setUpdatedAt(LocalDateTime.now());
+        Appointment updated = appointmentRepository.save(appointment);
+
+        // Registrar en auditoría
+        registerAudit(updated, "UPDATED", "Cita actualizada", "SYSTEM");
+
+        return mapToResponse(updated);
+    }
+
+    /**
      * Obtiene una cita por ID
      */
     @Transactional(readOnly = true)
